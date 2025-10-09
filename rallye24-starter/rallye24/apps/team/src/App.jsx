@@ -6,6 +6,8 @@ export default function App() {
   const [session, setSession] = useState(null)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [teamName, setTeamName] = useState('')
+  const [profile, setProfile] = useState(null)
   const [riddles, setRiddles] = useState([])
 
   useEffect(() => {
@@ -14,10 +16,30 @@ export default function App() {
     return () => sub.subscription.unsubscribe()
   }, [])
 
+  useEffect(() => {
+    if (!session) return
+    supabase.from('profiles').select('*').eq('id', session.user.id).single()
+      .then(({ data, error }) => {
+        if (error) console.warn(error.message)
+        setProfile(data)
+      })
+  }, [session])
+
   async function signUp(e) {
     e.preventDefault()
-    const { error } = await supabase.auth.signUp({ email, password })
-    if (error) alert(error.message)
+    const { data, error } = await supabase.auth.signUp({ email, password })
+    if (error) { alert(error.message); return }
+    const user = data.user
+    if (!user) { alert('Compte créé. Vérifie l’email si confirmation requise.'); return }
+    // Mettre à jour ou insérer le profil avec le nom d'équipe
+    const { error: upErr } = await supabase
+      .from('profiles')
+      .update({ team_name: teamName || 'Equipe' })
+      .eq('id', user.id)
+    if (upErr) {
+      await supabase.from('profiles').insert({ id: user.id, role: 'team', team_name: teamName || 'Equipe' })
+    }
+    alert('Compte créé. Connecte-toi.')
   }
 
   async function signIn(e) {
@@ -40,7 +62,8 @@ export default function App() {
     return (
       <main style={{padding:20,fontFamily:'system-ui'}}>
         <h1>Rallye24 — Équipe</h1>
-        <form onSubmit={signIn} style={{display:'grid',gap:8,maxWidth:320}}>
+        <form onSubmit={signIn} style={{display:'grid',gap:8,maxWidth:340}}>
+          <input placeholder="Nom d'équipe" value={teamName} onChange={e=>setTeamName(e.target.value)} />
           <input placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} />
           <input placeholder="Mot de passe" type="password" value={password} onChange={e=>setPassword(e.target.value)} />
           <div style={{display:'flex',gap:8}}>
@@ -54,17 +77,19 @@ export default function App() {
 
   return (
     <main style={{padding:20,fontFamily:'system-ui'}}>
-      <h1>Rallye24 — Équipe</h1>
+      <h1>Rallye24 — Équipe {profile?.team_name ? `« ${profile.team_name} »` : ''}</h1>
       <button onClick={signOut}>Se déconnecter</button>
       <section style={{marginTop:20}}>
         <h2>Énigmes actives (démo)</h2>
         <button onClick={loadRiddles}>Charger 5 énigmes</button>
         <ul>
           {riddles.map(r => (
-            <li key={r.id}><strong>#{r.index_hint}</strong> — {r.rtype}</li>
+            <li key={r.id}>
+              <strong>Bonjour équipe {profile?.team_name || '...'}</strong> — #{r.index_hint} — {r.rtype}
+            </li>
           ))}
         </ul>
-        <p style={{opacity:.7}}>Écran minimal pour vérifier la lecture des données.</p>
+        <p style={{opacity:.7}}>Personnalisation par nom d’équipe côté client.</p>
       </section>
     </main>
   )

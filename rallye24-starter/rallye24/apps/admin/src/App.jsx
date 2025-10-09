@@ -25,9 +25,18 @@ export default function App() {
   }
 
   async function loadScores() {
-    const { data, error } = await supabase.from('scores').select('*')
-    if (error) { alert(error.message); return }
-    setScores(data ?? [])
+    const { data: scoreRows, error: scoreErr } = await supabase.from('scores').select('*')
+    if (scoreErr) { alert(scoreErr.message); return }
+    const teamIds = (scoreRows ?? []).map(s => s.team_id)
+    if (teamIds.length === 0) { setScores(scoreRows ?? []); return }
+    const { data: profs, error: profErr } = await supabase
+      .from('profiles')
+      .select('id, team_name')
+      .in('id', teamIds)
+    if (profErr) { alert(profErr.message); return }
+    const nameById = Object.fromEntries((profs ?? []).map(p => [p.id, p.team_name]))
+    const merged = (scoreRows ?? []).map(s => ({ ...s, team_name: nameById[s.team_id] || s.team_id }))
+    setScores(merged)
   }
 
   if (!session) {
@@ -53,10 +62,10 @@ export default function App() {
         <button onClick={loadScores}>Charger les scores</button>
         <ul>
           {scores.map(s => (
-            <li key={s.team_id}><code>{s.team_id}</code> — {s.total_points} pts</li>
+            <li key={s.team_id}><strong>{s.team_name}</strong> — {s.total_points} pts</li>
           ))}
         </ul>
-        <p style={{opacity:.7}}>Écran minimal pour vérifier la connexion et la vue <code>scores</code>.</p>
+        <p style={{opacity:.7}}>Lecture de la vue <code>scores</code> + noms d'équipe via <code>profiles</code>.</p>
       </section>
     </main>
   )

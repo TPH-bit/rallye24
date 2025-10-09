@@ -1,37 +1,37 @@
 
-# Rallye24 — Starter (Vercel + Supabase)
+# Rallye24 — Starter v2 (Team name support)
 
 Deux applis PWA :
+- `apps/admin` — organisateur
+- `apps/team` — équipes avec nom personnalisé
 
-- `apps/admin` — interface organisateur
-- `apps/team` — interface équipes
+## Variables Vercel requises
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
 
-## Prérequis
-- Compte Supabase créé, avec tables (script SQL fourni précédemment)
-- Variables d'environnement déjà ajoutées dans Vercel :
-  - `VITE_SUPABASE_URL`
-  - `VITE_SUPABASE_ANON_KEY`
+## SQL (option) — créer un profil auto à l’inscription
+Dans Supabase → SQL Editor, exécuter :
+```sql
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.profiles (id, role, team_name)
+  values (new.id, 'team', 'Equipe');
+  return new;
+end;
+$$;
 
-## Installation locale (optionnel)
-1. Installe Node.js LTS
-2. Dans `apps/admin` puis `apps/team` :
-   ```bash
-   npm install
-   npm run dev
-   ```
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+after insert on auth.users
+for each row execute function public.handle_new_user();
+```
 
-## Déploiement sur Vercel
-1. Crée un dépôt GitHub `rallye24`
-2. Ajoute le contenu de ce dossier au dépôt et pousse
-3. Sur Vercel → Import Project → sélectionne `rallye24`
-4. Build & Deploy auto
-
-## Connexion
-- Crée un utilisateur **admin** dans Supabase → Authentication → Users
-- Mets son `role='admin'` dans la table `public.profiles`
-
-## Vérification rapide
-- `admin` : se connecter → bouton "Charger les scores" (lit la vue `scores`)
-- `team` : créer un compte → bouton "Charger 5 énigmes" (lit `riddles`)
-
-Ce starter est minimal. Tu pourras ensuite ajouter écrans, offline, photos, etc.
+## Déploiement
+1. Pousse ce dossier sur GitHub (`rallye24`).
+2. Vercel → Import Project → Root Directory `apps/admin` puis `apps/team`.
+3. Ajoute les variables d’environnement si besoin.
