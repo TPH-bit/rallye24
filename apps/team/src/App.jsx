@@ -72,7 +72,7 @@ export default function App(){
   )
 
   const ctx = {
-    team_name: profile?.team_name || 'Équipe',
+    team_name: profile?.team_name || '',
     team_email: session?.user?.email || '',
     today: fmtDate(),
   }
