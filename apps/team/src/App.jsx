@@ -114,7 +114,7 @@ export default function App() {
               const personalized = interpolate(md, ctx)
               return (
                 <li key={r.id} style={{ margin: '14px 0' }}>
-                  <div style={{ fontWeight: 800, marginBottom: 6 }}>Énigme #{r.index_hint}</div>
+                  <div style={{ fontWeight: 800, marginBottom: 6 }}>Énigme {r.index_hint}</div>
                   <div>{personalized}</div>
                 </li>
               )
