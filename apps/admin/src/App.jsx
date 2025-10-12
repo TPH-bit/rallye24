@@ -48,7 +48,7 @@ export default function App() {
           <input placeholder="Mot de passe" type="password" value={password} onChange={e=>setPassword(e.target.value)} />
           <button type="submit">Se connecter</button>
         </form>
-        <p style={{opacity:.7}}>Utilise le compte créé dans Supabase → Authentication → Users.</p>
+        <p style={{opacity:.7}}>Compte créé dans Supabase → Authentication → Users.</p>
       </main>
     )
   }
@@ -65,7 +65,6 @@ export default function App() {
             <li key={s.team_id}><strong>{s.team_name}</strong> — {s.total_points} pts</li>
           ))}
         </ul>
-        <p style={{opacity:.7}}>Lecture de la vue <code>scores</code> + noms d'équipe via <code>profiles</code>.</p>
       </section>
     </main>
   )

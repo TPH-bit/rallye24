@@ -2,6 +2,11 @@
 import React, { useEffect, useState } from 'react'
 import { supabase } from './lib/supabaseClient'
 
+// interpolation simple: remplace {{key}} par ctx[key]
+function interpolate(str = '', ctx = {}) {
+  return str.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, k) => (ctx[k] ?? ''))
+}
+
 export default function App() {
   const [session, setSession] = useState(null)
   const [email, setEmail] = useState('')
@@ -83,13 +88,17 @@ export default function App() {
         <h2>Énigmes actives (démo)</h2>
         <button onClick={loadRiddles}>Charger 5 énigmes</button>
         <ul>
-          {riddles.map(r => (
-            <li key={r.id}>
-              <strong>Bonjour équipe {profile?.team_name || '...'}</strong> — #{r.index_hint} — {r.rtype}
-            </li>
-          ))}
+          {riddles.map(r => {
+            const md = r?.payload?.markdown || ''
+            const personalized = interpolate(md, { team_name: profile?.team_name })
+            return (
+              <li key={r.id}>
+                <div style={{fontWeight:'600'}}>#{r.index_hint} — {r.rtype}</div>
+                <div>{personalized}</div>
+              </li>
+            )
+          })}
         </ul>
-        <p style={{opacity:.7}}>Personnalisation par nom d’équipe côté client.</p>
       </section>
     </main>
   )
