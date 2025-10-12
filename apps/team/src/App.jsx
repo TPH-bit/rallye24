@@ -88,18 +88,19 @@ export default function App(){
       <div className="card" style={{marginTop:14}}>
         <span className="badge">{t('active_riddles')}</span>
         <ul>
-          {riddles.map(r=>{
-            const md = r?.payload?.markdown || ''
-            const personalized = interpolate(md, ctx)
-            return (
-              <li key={r.id} style={{margin:'12px 0'}}>
-                <div style={{fontWeight:700, marginBottom:6}}>
-                  #{r.index_hint} — {r.rtype}
-                </div>
-                <div>{personalized}</div>
-              </li>
-            )
-          })}
+          {[...riddles]
+          .sort((a,b) => (a.index_hint ?? 0) - (b.index_hint ?? 0))   // tri #1, #2, #3…
+          .map(r => {
+              const md = r?.payload?.markdown || ''
+              const personalized = interpolate(md, ctx)
+              return (
+         <li key={r.id} style={{margin:'14px 0'}}>
+            <div style={{fontWeight:800, marginBottom:6}}>Énigme #{r.index_hint}</div>
+            <div>{personalized}</div>
+        </li>
+    )
+  })}
+
         </ul>
       </div>
     </div>
