@@ -1,0 +1,1 @@
+export function interpolate(str='',ctx={}){return str.replace(/\{\{\s*(\w+)\s*\}\}/g,(_,k)=>(ctx[k]??''))}

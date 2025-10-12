@@ -1,13 +1,24 @@
-
 <!doctype html>
 <html lang="fr">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Rallye24</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rallye24 — Équipe</title>
+  <style>
+    :root { --bg:#0f1115; --card:#151922; --acc:#ffcd00; --txt:#e8eef8; --mut:#9fb0c7; }
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--txt);font:16px system-ui,Segoe UI,Roboto}
+    .wrap{max-width:900px;margin:40px auto;padding:0 16px}
+    h1{font-weight:800;letter-spacing:.5px}
+    button{background:var(--acc);color:#111;padding:10px 14px;border:0;border-radius:10px;cursor:pointer;font-weight:700}
+    button:disabled{opacity:.6;cursor:not-allowed}
+    .row{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
+    input{padding:10px 12px;border:1px solid #263043;background:#0c0f14;color:var(--txt);border-radius:10px}
+    .card{background:var(--card);border:1px solid #263043;border-radius:14px;padding:14px 16px;box-shadow:0 6px 22px rgba(0,0,0,.25)}
+    .badge{display:inline-block;background:#22314a;color:var(--mut);padding:4px 8px;border-radius:999px;font-size:12px;margin-right:8px}
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
 </html>
