@@ -4,6 +4,7 @@ import { supabase } from "./lib/supabase";
 import DeleteTeamButton from "./components/DeleteTeamButton";
 import { DeleteTeamButton } from "./components/DeleteTeamButton";
 
+
 export default function App() {
   return (
     <div style={{ padding: 24 }}>
