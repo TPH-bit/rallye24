@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "./lib/supabase";
 import DeleteTeamButton from "./components/DeleteTeamButton";
+import { DeleteTeamButton } from "./components/DeleteTeamButton";
 
 export default function App() {
   return (
