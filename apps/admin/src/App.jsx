@@ -1,71 +1,93 @@
-
-import React, { useEffect, useState } from 'react'
-import { supabase } from './lib/supabaseClient'
+// apps/admin/src/App.jsx
+import React, { useEffect, useState } from "react";
+import { supabase } from "./lib/supabase";
+import DeleteTeamButton from "./components/DeleteTeamButton";
 
 export default function App() {
-  const [session, setSession] = useState(null)
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [scores, setScores] = useState([])
+  return (
+    <div style={{ padding: 24 }}>
+      <h1>Admin — Équipes</h1>
+      <AuthGate>
+        <TeamsList />
+      </AuthGate>
+    </div>
+  );
+}
+
+// Oblige à être connecté (GM) dans l’onglet admin
+function AuthGate({ children }) {
+  const [user, setUser] = useState(null);
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSession(data.session ?? null))
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => setSession(sess))
-    return () => sub.subscription.unsubscribe()
-  }, [])
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user ?? null);
+      setChecking(false);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange(() =>
+      supabase.auth.getUser().then(({ data }) => setUser(data.user ?? null))
+    );
+    return () => sub.subscription.unsubscribe();
+  }, []);
 
-  async function signIn(e) {
-    e.preventDefault()
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) alert(error.message)
+  if (checking) return <p>Vérification…</p>;
+  if (!user) return <p>Veuillez vous connecter en GM dans cet onglet.</p>;
+  return <>{children}</>;
+}
+
+function TeamsList() {
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  async function load() {
+    setLoading(true);
+    // On affiche toutes les équipes (team + admin + gm) pour gestion
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, team_name, role")
+      .order("role", { ascending: true })
+      .order("team_name", { ascending: true });
+
+    if (error) {
+      alert(`Lecture impossible: ${error.message}`);
+    } else {
+      setRows(data || []);
+    }
+    setLoading(false);
   }
 
-  async function signOut() {
-    await supabase.auth.signOut()
-  }
+  useEffect(() => {
+    load();
+  }, []);
 
-  async function loadScores() {
-    const { data: scoreRows, error: scoreErr } = await supabase.from('scores').select('*')
-    if (scoreErr) { alert(scoreErr.message); return }
-    const teamIds = (scoreRows ?? []).map(s => s.team_id)
-    if (teamIds.length === 0) { setScores(scoreRows ?? []); return }
-    const { data: profs, error: profErr } = await supabase
-      .from('profiles')
-      .select('id, team_name')
-      .in('id', teamIds)
-    if (profErr) { alert(profErr.message); return }
-    const nameById = Object.fromEntries((profs ?? []).map(p => [p.id, p.team_name]))
-    const merged = (scoreRows ?? []).map(s => ({ ...s, team_name: nameById[s.team_id] || s.team_id }))
-    setScores(merged)
-  }
-
-  if (!session) {
-    return (
-      <main style={{padding:20,fontFamily:'system-ui'}}>
-        <h1>Rallye24 — Admin</h1>
-        <form onSubmit={signIn} style={{display:'grid',gap:8,maxWidth:320}}>
-          <input placeholder="Email admin" value={email} onChange={e=>setEmail(e.target.value)} />
-          <input placeholder="Mot de passe" type="password" value={password} onChange={e=>setPassword(e.target.value)} />
-          <button type="submit">Se connecter</button>
-        </form>
-        <p style={{opacity:.7}}>Compte créé dans Supabase → Authentication → Users.</p>
-      </main>
-    )
-  }
+  if (loading) return <p>Chargement…</p>;
 
   return (
-    <main style={{padding:20,fontFamily:'system-ui'}}>
-      <h1>Rallye24 — Admin</h1>
-      <button onClick={signOut}>Se déconnecter</button>
-      <section style={{marginTop:20}}>
-        <h2>Classement (lecture seule)</h2>
-        <button onClick={loadScores}>Charger les scores</button>
-        <ul>
-          {scores.map(s => (
-            <li key={s.team_id}><strong>{s.team_name}</strong> — {s.total_points} pts</li>
-          ))}
-        </ul>
-      </section>
-    </main>
-  )
+    <table cellPadding={6} border={1} style={{ borderCollapse: "collapse", width: "100%" }}>
+      <thead>
+        <tr>
+          <th style={{ textAlign: "left" }}>Nom</th>
+          <th style={{ textAlign: "left" }}>Rôle</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((r) => (
+          <tr key={r.id}>
+            <td>{r.team_name || <i>(sans nom)</i>}</td>
+            <td>{r.role}</td>
+            <td style={{ textAlign: "center" }}>
+              {/* Ne pas autoriser la suppression des comptes GM/Admin */}
+              {r.role === "team" ? (
+                <DeleteTeamButton teamId={r.id} teamName={r.team_name || r.id} onDeleted={load} />
+              ) : (
+                <span style={{ color: "#999" }}>—</span>
+              )}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
 }
+
