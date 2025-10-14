@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "./lib/supabaseClient";
 
-// Helper: format le rôle pour l'affichage
 function roleLabel(role) {
   if (role === "gm") return "GM";
   if (role === "admin") return "ADMIN";
@@ -15,7 +14,6 @@ export default function App() {
   const [busyId, setBusyId] = useState(null);
   const [error, setError] = useState("");
 
-  // Charge la liste des équipes (depuis public.profiles)
   async function loadTeams() {
     setLoading(true);
     setError("");
@@ -25,11 +23,8 @@ export default function App() {
       .order("role", { ascending: true, nullsFirst: true })
       .order("team_name", { ascending: true, nullsFirst: true });
 
-    if (error) {
-      setError(error.message ?? String(error));
-    } else {
-      setTeams(data ?? []);
-    }
+    if (error) setError(error.message ?? String(error));
+    else setTeams(data ?? []);
     setLoading(false);
   }
 
@@ -37,16 +32,12 @@ export default function App() {
     loadTeams();
   }, []);
 
-  // Supprime une équipe via la RPC sécurisée delete_team(uuid)
   async function handleDelete(team) {
     if (!team?.id) return;
-
-    // On évite d’effacer GM/Admin par erreur. Tu peux enlever ce garde-fou si tu veux.
     if (team.role !== "team") {
       alert("Par sécurité, suppression réservée aux équipes (role = team).");
       return;
     }
-
     const ok = confirm(
       `Supprimer définitivement l’équipe « ${team.team_name || team.id} » ?`
     );
@@ -54,17 +45,13 @@ export default function App() {
 
     setBusyId(team.id);
     setError("");
-
     const { error } = await supabase.rpc("delete_team", { team_id: team.id });
-
     setBusyId(null);
 
     if (error) {
       alert(error.message ?? String(error));
       return;
     }
-
-    // Retire l’équipe de la liste locale
     setTeams((prev) => prev.filter((t) => t.id !== team.id));
     alert("Équipe supprimée.");
   }
@@ -79,9 +66,7 @@ export default function App() {
         </button>
       </div>
 
-      {error ? (
-        <div style={alertBox("error")}>{error}</div>
-      ) : null}
+      {error ? <div style={alertBox("error")}>{error}</div> : null}
 
       {loading ? (
         <div>Chargement…</div>
@@ -129,7 +114,7 @@ export default function App() {
   );
 }
 
-/* —————————————————— Styles inline simples —————————————————— */
+/* Styles inline simples */
 function btn(kind = "primary", disabled = false) {
   const base = {
     padding: "8px 12px",
@@ -146,30 +131,17 @@ function btn(kind = "primary", disabled = false) {
   return base;
 }
 function table() {
-  return {
-    width: "100%",
-    borderCollapse: "collapse",
-    border: "1px solid #ddd",
-  };
+  return { width: "100%", borderCollapse: "collapse", border: "1px solid #ddd" };
 }
 function thTd() {
-  return {
-    border: "1px solid #ddd",
-    padding: "8px",
-    textAlign: "left",
-  };
+  return { border: "1px solid #ddd", padding: "8px", textAlign: "left" };
 }
 function alertBox(type = "info") {
-  const styles = {
-    padding: "8px 12px",
-    borderRadius: 6,
-    marginBottom: 12,
-  };
+  const s = { padding: "8px 12px", borderRadius: 6, marginBottom: 12 };
   if (type === "error") {
-    styles.background = "#fdecea";
-    styles.border = "1px solid #f5c2c7";
-    styles.color = "#842029";
+    s.background = "#fdecea";
+    s.border = "1px solid #f5c2c7";
+    s.color = "#842029";
   }
-  return styles;
+  return s;
 }
-
