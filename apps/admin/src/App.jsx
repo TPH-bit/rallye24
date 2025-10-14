@@ -1,86 +1,175 @@
-// apps/admin/src/App.jsx
 import { useEffect, useState } from "react";
-import { supabase } from "./lib/supabase";
-import { DeleteTeamButton } from "./components/DeleteTeamButton";
+import { supabase } from "./lib/supabaseClient";
+
+// Helper: format le rôle pour l'affichage
+function roleLabel(role) {
+  if (role === "gm") return "GM";
+  if (role === "admin") return "ADMIN";
+  if (role === "team") return "EQUIPE";
+  return "";
+}
 
 export default function App() {
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState(null);
+  const [busyId, setBusyId] = useState(null);
+  const [error, setError] = useState("");
 
-  async function load() {
+  // Charge la liste des équipes (depuis public.profiles)
+  async function loadTeams() {
     setLoading(true);
-    setErr(null);
-    // charge id, team_name, role
+    setError("");
     const { data, error } = await supabase
       .from("profiles")
       .select("id, team_name, role")
-      .order("role", { nullsFirst: true })
-      .order("team_name", { nullsLast: true });
-    if (error) setErr(error.message);
-    else setTeams(data || []);
+      .order("role", { ascending: true, nullsFirst: true })
+      .order("team_name", { ascending: true, nullsFirst: true });
+
+    if (error) {
+      setError(error.message ?? String(error));
+    } else {
+      setTeams(data ?? []);
+    }
     setLoading(false);
   }
 
   useEffect(() => {
-    load();
+    loadTeams();
   }, []);
 
-  function removeFromList(teamId) {
-    setTeams((prev) => prev.filter((t) => t.id !== teamId));
+  // Supprime une équipe via la RPC sécurisée delete_team(uuid)
+  async function handleDelete(team) {
+    if (!team?.id) return;
+
+    // On évite d’effacer GM/Admin par erreur. Tu peux enlever ce garde-fou si tu veux.
+    if (team.role !== "team") {
+      alert("Par sécurité, suppression réservée aux équipes (role = team).");
+      return;
+    }
+
+    const ok = confirm(
+      `Supprimer définitivement l’équipe « ${team.team_name || team.id} » ?`
+    );
+    if (!ok) return;
+
+    setBusyId(team.id);
+    setError("");
+
+    const { error } = await supabase.rpc("delete_team", { team_id: team.id });
+
+    setBusyId(null);
+
+    if (error) {
+      alert(error.message ?? String(error));
+      return;
+    }
+
+    // Retire l’équipe de la liste locale
+    setTeams((prev) => prev.filter((t) => t.id !== team.id));
+    alert("Équipe supprimée.");
   }
 
-  if (loading) return <div style={{ padding: 16 }}>Chargement…</div>;
-  if (err) return <div style={{ padding: 16, color: "red" }}>Erreur: {err}</div>;
-
   return (
-    <div style={{ padding: 24, maxWidth: 900, margin: "0 auto" }}>
-      <h1 style={{ marginBottom: 12 }}>Gestion des équipes</h1>
+    <div style={{ maxWidth: 960, margin: "40px auto", padding: "0 16px" }}>
+      <h1 style={{ marginBottom: 16 }}>Gestion des équipes (GM)</h1>
 
-      <table
-        style={{
-          width: "100%",
-          borderCollapse: "collapse",
-          border: "1px solid #ddd",
-        }}
-      >
-        <thead>
-          <tr style={{ background: "#f7f7f7" }}>
-            <th style={th}>Nom</th>
-            <th style={th}>Rôle</th>
-            <th style={th}>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {teams.map((team) => (
-            <tr key={team.id} style={{ borderTop: "1px solid #eee" }}>
-              <td style={td}>{team.team_name || "—"}</td>
-              <td style={td}>{team.role || "team"}</td>
-              <td style={td}>
-                <DeleteTeamButton
-                  teamId={team.id}
-                  teamName={team.team_name || "Cette équipe"}
-                  onDeleted={() => removeFromList(team.id)}
-                />
-              </td>
-            </tr>
-          ))}
-          {teams.length === 0 && (
-            <tr>
-              <td style={td} colSpan={3}>
-                Aucune équipe.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-
-      <div style={{ marginTop: 12 }}>
-        <button onClick={load}>Rafraîchir</button>
+      <div style={{ marginBottom: 12 }}>
+        <button onClick={loadTeams} disabled={loading} style={btn()}>
+          {loading ? "Chargement…" : "Rafraîchir"}
+        </button>
       </div>
+
+      {error ? (
+        <div style={alertBox("error")}>{error}</div>
+      ) : null}
+
+      {loading ? (
+        <div>Chargement…</div>
+      ) : (
+        <table style={table()}>
+          <thead>
+            <tr>
+              <th style={thTd()}>Nom</th>
+              <th style={thTd()}>Rôle</th>
+              <th style={thTd()}>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {teams.map((t) => (
+              <tr key={t.id}>
+                <td style={thTd()}>{t.team_name || t.id}</td>
+                <td style={thTd()}>{roleLabel(t.role)}</td>
+                <td style={thTd()}>
+                  <button
+                    onClick={() => handleDelete(t)}
+                    disabled={busyId === t.id || t.role !== "team"}
+                    style={btn("danger", busyId === t.id || t.role !== "team")}
+                    title={
+                      t.role !== "team"
+                        ? "Par sécurité, suppression réservée aux équipes."
+                        : "Supprimer l’équipe"
+                    }
+                  >
+                    {busyId === t.id ? "Suppression…" : "Supprimer"}
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {teams.length === 0 && (
+              <tr>
+                <td style={thTd()} colSpan={3}>
+                  Aucune équipe.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 }
 
-const th = { textAlign: "left", padding: 8, borderLeft: "1px solid #ddd" };
-const td = { padding: 8, borderLeft: "1px solid #eee" };
+/* —————————————————— Styles inline simples —————————————————— */
+function btn(kind = "primary", disabled = false) {
+  const base = {
+    padding: "8px 12px",
+    borderRadius: 6,
+    border: "1px solid #ccc",
+    cursor: disabled ? "not-allowed" : "pointer",
+    background: "#f4f4f4",
+  };
+  if (kind === "danger") {
+    base.background = disabled ? "#f8d7da" : "#dc3545";
+    base.color = disabled ? "#7a1b25" : "#fff";
+    base.border = "1px solid #c82333";
+  }
+  return base;
+}
+function table() {
+  return {
+    width: "100%",
+    borderCollapse: "collapse",
+    border: "1px solid #ddd",
+  };
+}
+function thTd() {
+  return {
+    border: "1px solid #ddd",
+    padding: "8px",
+    textAlign: "left",
+  };
+}
+function alertBox(type = "info") {
+  const styles = {
+    padding: "8px 12px",
+    borderRadius: 6,
+    marginBottom: 12,
+  };
+  if (type === "error") {
+    styles.background = "#fdecea";
+    styles.border = "1px solid #f5c2c7";
+    styles.color = "#842029";
+  }
+  return styles;
+}
+
