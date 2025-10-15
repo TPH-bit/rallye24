@@ -64,7 +64,7 @@ function canDelete(role) {
 
 async function deleteTeam(id, name) {
   if (!confirm(`Supprimer définitivement "${name}" ?`)) return;
-  const { error } = await supabase.rpc("delete_team", { team_id: id });
+  const { error } = await supabase.rpc("delete_team", { _team_id: id });
   if (error) {
     alert(error.message);
     return;
