@@ -10,19 +10,18 @@ export default function App() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [teamName, setTeamName] = useState('')
+  const [infoMsg, setInfoMsg] = useState('')   // << message info
 
   const [profile, setProfile] = useState(null)
   const [riddles, setRiddles] = useState([])
   const [loading, setLoading] = useState(false)
 
-  // session
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session ?? null))
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSession(s))
     return () => sub.subscription.unsubscribe()
   }, [])
 
-  // auto fetch profile + riddles after login
   useEffect(() => {
     if (!session) { setRiddles([]); setProfile(null); return }
     ;(async () => {
@@ -34,18 +33,15 @@ export default function App() {
 
   async function signUp(e) {
     e.preventDefault()
-    // Création du compte
     const { data, error } = await supabase.auth.signUp({ email, password })
-    if (error) { alert(error.message); return }
+    if (error) { setInfoMsg(error.message); return }
 
     const user = data.user
     if (user) {
-      // Crée/maj le profil pendant que la session existe encore
       const { error: upErr } = await supabase
         .from('profiles')
         .update({ team_name: teamName || 'Équipe', role: 'team' })
         .eq('id', user.id)
-
       if (upErr) {
         await supabase
           .from('profiles')
@@ -53,18 +49,15 @@ export default function App() {
       }
     }
 
-    // Empêcher l’auto-connexion immédiate
     await supabase.auth.signOut()
-
-    // Message de confirmation
-    alert(`Équipe "${teamName || 'nouvelle équipe'}" créée. Vous pouvez maintenant vous connecter.`)
-    // On reste sur l’écran de connexion (session=null)
+    setInfoMsg(`Équipe "${teamName || 'nouvelle équipe'}" créée. Vous pouvez maintenant vous connecter.`)
+    setPassword('')
   }
 
   async function signIn(e) {
     e.preventDefault()
     const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) alert(error.message)
+    if (error) setInfoMsg(error.message)
   }
 
   async function signOut() {
@@ -79,15 +72,25 @@ export default function App() {
       .eq('is_active', true)
       .limit(5)
     setLoading(false)
-    if (error) { alert(error.message); return }
+    if (error) { setInfoMsg(error.message); return }
     setRiddles(data ?? [])
   }
 
-  // non connecté
   if (!session) {
     return (
       <div className="wrap">
         <h1>{t('title')}</h1>
+
+        {infoMsg && (
+          <div style={{
+            margin: '10px 0 14px', padding: '10px 14px',
+            background: '#0d3b1e', color: '#d1fae5',
+            border: '1px solid #065f46', borderRadius: 8
+          }}>
+            {infoMsg}
+          </div>
+        )}
+
         <div className="card">
           <div className="row">
             <input placeholder={t('team_name')} value={teamName} onChange={e => setTeamName(e.target.value)} />
