@@ -36,6 +36,10 @@ function renderShell() {
       <button id="refresh">Rafraîchir</button>
       <button id="logout">Se déconnecter</button>
     </div>
+
+    <!-- Toast succès -->
+    <div id="toast" style="position:fixed;top:20px;right:20px;padding:10px 14px;background:#16a34a;color:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.15);display:none;z-index:1000"></div>
+
     <table>
       <thead>
         <tr><th>Nom</th><th>Rôle</th><th>Actions</th></tr>
@@ -57,6 +61,15 @@ function renderShell() {
   });
 }
 
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  if (!t) return;
+  t.textContent = msg;
+  t.style.display = "block";
+  clearTimeout(window.__toastTimer);
+  window.__toastTimer = setTimeout(() => (t.style.display = "none"), 2000);
+}
+
 function canDelete(role) {
   const r = String(role || "").trim().toLowerCase();
   return !(r === "gm" || r === "admin");
@@ -70,6 +83,7 @@ async function deleteTeam(id, name) {
     return;
   }
   await loadTeams();
+  showToast(`Équipe "${name}" supprimée`);
 }
 
 function renderRows(rows) {
