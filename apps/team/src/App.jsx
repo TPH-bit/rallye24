@@ -34,17 +34,31 @@ export default function App() {
 
   async function signUp(e) {
     e.preventDefault()
+    // Création du compte
     const { data, error } = await supabase.auth.signUp({ email, password })
     if (error) { alert(error.message); return }
+
     const user = data.user
-    if (!user) { alert('Compte créé. Vérifiez votre email si nécessaire.'); return }
-    const { error: upErr } = await supabase.from('profiles')
-      .update({ team_name: teamName || 'Équipe', role: 'team' }).eq('id', user.id)
-    if (upErr) {
-      await supabase.from('profiles')
-        .insert({ id: user.id, role: 'team', team_name: teamName || 'Équipe' })
+    if (user) {
+      // Crée/maj le profil pendant que la session existe encore
+      const { error: upErr } = await supabase
+        .from('profiles')
+        .update({ team_name: teamName || 'Équipe', role: 'team' })
+        .eq('id', user.id)
+
+      if (upErr) {
+        await supabase
+          .from('profiles')
+          .insert({ id: user.id, role: 'team', team_name: teamName || 'Équipe' })
+      }
     }
-    alert('Compte créé. Connectez-vous.')
+
+    // Empêcher l’auto-connexion immédiate
+    await supabase.auth.signOut()
+
+    // Message de confirmation
+    alert(`Équipe "${teamName || 'nouvelle équipe'}" créée. Vous pouvez maintenant vous connecter.`)
+    // On reste sur l’écran de connexion (session=null)
   }
 
   async function signIn(e) {
@@ -100,7 +114,6 @@ export default function App() {
       <h1>{t('title')} {profile?.team_name ? `« ${profile.team_name} »` : ''}</h1>
       <div className="row">
         <button onClick={signOut}>{t('sign_out')}</button>
-        {/* bouton de chargement supprimé, le chargement est automatique */}
       </div>
 
       <div className="card" style={{ marginTop: 14 }}>
