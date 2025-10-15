@@ -5,6 +5,8 @@ import { supabase } from "./lib/supabaseClient.js";
 
 const app = document.getElementById("app");
 
+/* ---------- Vues ---------- */
+
 function renderLogin() {
   app.innerHTML = `
     <h1>Connexion GM</h1>
@@ -16,6 +18,7 @@ function renderLogin() {
     <p class="muted">Tu dois te connecter pour voir les équipes.</p>
     <p id="err" class="error"></p>
   `;
+
   document.getElementById("login").addEventListener("submit", async (e) => {
     e.preventDefault();
     const email = document.getElementById("email").value.trim();
@@ -25,7 +28,9 @@ function renderLogin() {
       document.getElementById("err").textContent = error.message;
       return;
     }
-    window.location.reload();
+    // Pas de reload: on passe directement à l'interface
+    renderShell();
+    await loadTeams();
   });
 }
 
@@ -47,19 +52,22 @@ function renderShell() {
       <tbody id="tbody"><tr><td colspan="3">Chargement…</td></tr></tbody>
     </table>
   `;
+
   document.getElementById("refresh").onclick = loadTeams;
   document.getElementById("logout").onclick = async () => {
     await supabase.auth.signOut();
-    window.location.reload();
+    renderLogin();
   };
 
-  // Délégation de clic pour les boutons Supprimer
+  // Délégation de clic pour Supprimer
   document.getElementById("tbody").addEventListener("click", async (e) => {
     const btn = e.target.closest("button.btn-del");
     if (!btn) return;
     await deleteTeam(btn.dataset.id, btn.dataset.name);
   });
 }
+
+/* ---------- Utilitaires UI ---------- */
 
 function showToast(msg) {
   const t = document.getElementById("toast");
@@ -69,6 +77,8 @@ function showToast(msg) {
   clearTimeout(window.__toastTimer);
   window.__toastTimer = setTimeout(() => (t.style.display = "none"), 2000);
 }
+
+/* ---------- Logique ---------- */
 
 function canDelete(role) {
   const r = String(role || "").trim().toLowerCase();
