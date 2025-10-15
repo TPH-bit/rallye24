@@ -1,5 +1,10 @@
+import React from "react";
+import { createRoot } from "react-dom/client";
+import App from "./App.jsx";
 import { supabase } from "./lib/supabaseClient.js";
 
+const root = createRoot(document.getElementById("root"));
+root.render(<App />);
 const app = document.getElementById("app");
 
 function renderLogin() {
@@ -45,6 +50,28 @@ function renderShell() {
     await supabase.auth.signOut();
     window.location.reload();
   };
+
+  // Délégation de clic pour les boutons Supprimer
+  document.getElementById("tbody").addEventListener("click", async (e) => {
+    const btn = e.target.closest("button.btn-del");
+    if (!btn) return;
+    await deleteTeam(btn.dataset.id, btn.dataset.name);
+  });
+}
+
+function canDelete(role) {
+  const r = String(role || "").trim().toLowerCase();
+  return !(r === "gm" || r === "admin");
+}
+
+async function deleteTeam(id, name) {
+  if (!confirm(`Supprimer définitivement "${name}" ?`)) return;
+  const { error } = await supabase.rpc("delete_team", { team_id: id });
+  if (error) {
+    alert(error.message);
+    return;
+  }
+  await loadTeams();
 }
 
 function renderRows(rows) {
@@ -54,14 +81,17 @@ function renderRows(rows) {
     return;
   }
   tb.innerHTML = rows
-    .map(
-      (r) => `
+    .map((r) => {
+      const action = canDelete(r.role)
+        ? `<button class="btn-del rounded" data-id="${r.id}" data-name="${r.team_name ?? ""}">Supprimer</button>`
+        : `<span class="muted">—</span>`;
+      return `
       <tr>
         <td>${r.team_name ?? ""}</td>
         <td>${r.role ?? ""}</td>
-        <td><span class="muted">—</span></td>
-      </tr>`
-    )
+        <td>${action}</td>
+      </tr>`;
+    })
     .join("");
 }
 
