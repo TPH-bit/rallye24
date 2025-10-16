@@ -48,7 +48,7 @@ export default function App() {
 
   return (
     <div style={{ maxWidth: 900, margin: "40px auto", padding: 20 }}>
-      <h1 style={{ marginBottom: 10 }}>Rallye24 — Équipe</h1>
+      <h1 style={{ margin: 0, marginBottom: 10 }}>Rallye24 — Équipe</h1>
 
       {msg && (
         <div style={{ background: "#0f3", opacity: 0.85, padding: 10, marginBottom: 12 }}>
@@ -104,7 +104,7 @@ export default function App() {
           minHeight: 120,
         }}
       >
-        <h2 style={{ margin: "0 0 10px 0", fontSize: 18 }}>Liste des équipes</h2>
+        <h2 style={{ margin: 0, marginBottom: 10, fontSize: 18 }}>Liste des équipes</h2>
         {loading ? (
           <p>Chargement…</p>
         ) : teams.length === 0 ? (
