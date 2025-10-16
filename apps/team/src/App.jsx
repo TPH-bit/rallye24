@@ -103,8 +103,8 @@ export default function App() {
           padding: 12,
           minHeight: 120,
         }}
-      >
-        <h2 style={{ margin: 0, marginBottom: 10, fontSize: 18 }}>Liste des équipes</h2>
+
+       <h2 style={{ margin: 0, marginBottom: 10, fontSize: 18 }}>Liste des équipes</h2>
         {loading ? (
           <p>Chargement…</p>
         ) : teams.length === 0 ? (
