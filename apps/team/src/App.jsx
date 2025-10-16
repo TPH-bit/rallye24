@@ -14,9 +14,8 @@ export default function App() {
       .from("teams")
       .select("*")
       .order("created_at", { ascending: false });
-    if (error) {
-      setMsg(`Erreur chargement: ${error.message}`);
-    } else {
+    if (error) setMsg(`Erreur chargement: ${error.message}`);
+    else {
       setTeams(data || []);
       setMsg("");
     }
@@ -105,4 +104,36 @@ export default function App() {
           minHeight: 120,
         }}
       >
-        <h2 style={{ margin: "0 0 10
+        <h2 style={{ margin: "0 0 10px 0", fontSize: 18 }}>Liste des équipes</h2>
+        {loading ? (
+          <p>Chargement…</p>
+        ) : teams.length === 0 ? (
+          <p>Aucune équipe.</p>
+        ) : (
+          <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+            {teams.map((t) => (
+              <li
+                key={t.id}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 140px 220px",
+                  gap: 8,
+                  padding: "10px 8px",
+                  borderBottom: "1px solid #232b3a",
+                }}
+              >
+                <span style={{ fontWeight: 600 }}>{t.name}</span>
+                <span style={{ background: "#223048", padding: "4px 8px", borderRadius: 6 }}>
+                  {t.code}
+                </span>
+                <span style={{ color: "#9fb0c7" }}>
+                  {new Date(t.created_at).toLocaleString()}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </div>
+  );
+}
