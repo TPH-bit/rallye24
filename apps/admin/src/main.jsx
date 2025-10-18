@@ -1,4 +1,4 @@
-import React from "react";
+apps/admin/src/main.jsximport React from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.jsx";
 import { supabase } from "./lib/supabaseClient.js";
